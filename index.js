@@ -7,6 +7,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import { DatePicker, Table, Divider, Tag } from 'antd';
+import infinityLoad from './infinityLoad.js';
 
 
 const columns = [{
@@ -44,7 +45,7 @@ const columns = [{
 }];
 
 
-let total = 500;
+let total = 5000;
 
 let data = [];
 
@@ -64,13 +65,16 @@ class MyTable extends React.Component {
         this.pageData = {
             pageSize: 25,
             lastIndex: 0,
-            topIndex: 0
+            topIndex: 0,
+            clientHeight: 56
         };
         this.state = {
             data,
             curData: data.slice(0, this.pageData.pageSize),
             spliceNum: 0,
-            end: false
+            end: false,
+            paddingTop: 0,
+            paddingBottom: 300
         };
     }
 
@@ -109,20 +113,34 @@ class MyTable extends React.Component {
     }
 
     componentDidMount() {
-        window.onscroll = function (e) {
-            let lastIndex = this.pageData.lastIndex;
-            let topIndex = this.pageData.topIndex;
-            let scrollTop = this.getScrollTop()
-            if (scrollTop + this.getWindowHeight() > this.getScrollHeight() - 200) {
-                lastIndex++;
-                this.getEndData(lastIndex, this.state.data);
-                console.log(`lastIndex is ${lastIndex}`);
-            } else if (this.getScrollTop() < 20 && lastIndex > 4) {
-                console.log(`this.getScrollTop() ${scrollTop}`)
-                this.getTopData(lastIndex - 4, this.state.data);
+        infinityLoad.init({
+            pageData: this.pageData,
+            state: this.state,
+            setState: data => {
+                this.setState(data);
             }
-            console.log(lastIndex);
-        }.bind(this);
+        });
+        // console.dir(a.run());
+        // window.onscroll = function (e) {
+        //     let lastIndex = this.pageData.lastIndex;
+        //     let topIndex = this.pageData.topIndex;
+        //     let scrollTop = this.getScrollTop()
+        //     if (scrollTop + this.getWindowHeight() > this.getScrollHeight() - 500) {
+        //         lastIndex++;
+        //         this.getEndData(lastIndex, this.state.data);
+        //         console.log(`lastIndex is ${lastIndex}`);
+        //     } else if (this.getScrollTop() < this.state.paddingTop) {
+        //         console.log(`this.getScrollTop() ${scrollTop}`)
+        //         if (lastIndex > 4) {
+        //             this.getTopData(lastIndex - 4, this.state.data);
+        //         } else {
+        //             this.setState({
+        //                 paddingTop: 0
+        //             });
+        //         }
+        //     }
+        //     console.log(lastIndex);
+        // }.bind(this);
     }
 
     getTopData(topIndex, data) {
@@ -135,9 +153,10 @@ class MyTable extends React.Component {
         topData = appendData.concat(this.state.curData);
         topData.splice(-(pageSize), pageSize);
       }
-      this.pageData.lastIndex = this.pageData.lastIndex - 1
+      this.pageData.lastIndex = this.pageData.lastIndex - 1;
       this.setState({
-          curData: topData || this.state.curData
+          curData: topData || this.state.curData,
+          paddingTop: this.state.paddingTop - pageSize * this.pageData.clientHeight
       });
     }
 
@@ -153,8 +172,9 @@ class MyTable extends React.Component {
             lastData = this.state.curData.concat(appendData);
             console.log(lastData);
             this.setState({
-                end: false
-            })
+                end: false,
+                paddingTop: this.state.paddingTop + pageSize * this.pageData.clientHeight
+            });
             this.pageData.lastIndex = lastIndex;
         } else if (totalPage > nextPage - 1 && !this.state.end) { // 处理数据最后的一部分
             let num = ((totalPage + '').split('.')[1] / 100) * pageSize;
@@ -162,8 +182,9 @@ class MyTable extends React.Component {
             lastData = this.state.curData.concat(appendData);
             console.log(lastData);
             this.setState({
-                end: true
-            })
+                end: true,
+                paddingTop: this.state.paddingTop + num * this.pageData.clientHeight
+            });
         }
 
         if (prevPage > 3 && lastData) {
@@ -191,7 +212,11 @@ class MyTable extends React.Component {
 
     render() {
         return (
-            <Table columns={columns} dataSource={this.state.curData} pagination={{pageSize: total}} />
+            <div>
+                <div style={{paddingTop: this.state.paddingTop}}></div>
+                <Table columns={columns} dataSource={this.state.curData} pagination={false} />
+                <div style={{paddingBottom: this.state.paddingBottom}}></div>
+            </div>
         );
     }
 }
