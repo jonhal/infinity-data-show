@@ -1,41 +1,46 @@
 
 /**
- * infinityLoad.js
- * 
+ * @file infinityLoad.js
+ * lujunhao@baidu.com
  */
-
 
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
-		// AMD. Register as an anonymous module.
+        // AMD. Register as an anonymous module.
         define([], factory);
-    } else if (typeof module === 'object' && module.exports) {
-		// Node. Does not work with strict CommonJS, but
-		// only CommonJS-like environments that support module.exports,
-		// like Node.
+    }
+    else if (typeof module === 'object' && module.exports) {
+        // Node. Does not work with strict CommonJS, but
+        // only CommonJS-like environments that support module.exports,
+        // like Node.
         module.exports = factory();
-    } else {
-		// Browser globals (root is window)
+    }
+    else {
+        // Browser globals (root is window)
         root.infinityLoad = factory();
     }
 }(this, function () {
-    var pageData = {
+    let pageData = {
         pageSize: 25,
         lastIndex: 0,
         topIndex: 0,
-        clientHeight: 56
+        clientHeight: 56,
+        paddingTop: 0,
+        paddingBottom: 10
     };
 
-    var state = {
-
-    };
-    
-    var setState = function() {
+    let state = {
 
     };
 
-    var getScrollTop = function () {
-        var scrollTop = 0, bodyScrollTop = 0, documentScrollTop = 0;
+    let setState = function () {
+
+    };
+
+    let getScrollTop = function () {
+        let scrollTop = 0;
+        let bodyScrollTop = 0;
+        let documentScrollTop = 0;
         if (document.body) {
             bodyScrollTop = document.body.scrollTop;
         }
@@ -44,20 +49,23 @@
         }
         scrollTop = (bodyScrollTop - documentScrollTop > 0) ? bodyScrollTop : documentScrollTop;
         return scrollTop;
-	}
+    };
 
-	var getWindowHeight = function () {
-		var windowHeight = 0;
-        if (document.compatMode == "CSS1Compat") {
+    let getWindowHeight = function () {
+        let windowHeight = 0;
+        if (document.compatMode === 'CSS1Compat') {
             windowHeight = document.documentElement.clientHeight;
-        } else {
+        }
+        else {
             windowHeight = document.body.clientHeight;
         }
         return windowHeight;
-	}
+    };
 
-	var getScrollHeight = function () {
-        var scrollHeight = 0, bodyScrollHeight = 0, documentScrollHeight = 0;
+    let getScrollHeight = function () {
+        let scrollHeight = 0;
+        let bodyScrollHeight = 0;
+        let documentScrollHeight = 0;
         if (document.body) {
             bodyScrollHeight = document.body.scrollHeight;
         }
@@ -66,113 +74,117 @@
         }
         scrollHeight = (bodyScrollHeight - documentScrollHeight > 0) ? bodyScrollHeight : documentScrollHeight;
         return scrollHeight;
-	}
+    };
 
-	var getTopData = function(topIndex, data) {
-        console.log(`topIndex ${topIndex}`);
+    let getTopData = function (topIndex, pageData) {
         let pageSize = pageData.pageSize;
         let lastIndex = pageData.lastIndex;
-        let topData;      
+        let data = pageData.data;
+        let topData;
+        let topDom = document.getElementById('topDom');
+
         if (topIndex >= 0) {
             let appendData = data.slice((topIndex - 1) * pageSize, (topIndex) * pageSize);
-            topData = appendData.concat(state.curData);
+            topData = appendData.concat(pageData.curData);
             topData.splice(-(pageSize), pageSize);
         }
         pageData.lastIndex = pageData.lastIndex - 1;
-        let newPaddingTop = state.paddingTop - pageSize * pageData.clientHeight;
-        setState({
-            curData: topData || state.curData,
-            paddingTop: newPaddingTop
-        });
-        state.paddingTop = newPaddingTop;
-        state.curData = topData || state.curData;
-	}
+        let newPaddingTop = pageData.paddingTop - pageSize * pageData.clientHeight;
+        pageData.updataFn(topData || pageData.curData);
+        topDom.style.paddingTop = newPaddingTop + 'px';
+        pageData.paddingTop = newPaddingTop;
+        pageData.curData = topData || pageData.curData;
+    };
 
-    var getEndData =function (lastIndex, data) {
+    let getEndData = function (lastIndex, pageData) {
         let pageSize = pageData.pageSize;
+        let data = pageData.data;
         let totalPage = data.length / pageSize;
         let nextPage = lastIndex + 1;
         let prevPage = lastIndex - 1;
         let lastData;
         let spliceNum;
-        if (totalPage >= nextPage && !state.end) {
+        let topDom = document.getElementById('topDom');
+        if (totalPage >= nextPage && !pageData.end) {
             let appendData = data.slice(lastIndex * pageSize, nextPage * pageSize);
-            lastData = state.curData.concat(appendData);
+            lastData = pageData.curData.concat(appendData);
             console.log(lastData);
-            let newPaddingTop = state.paddingTop + pageSize * pageData.clientHeight
-            setState({
-                end: false,
-                paddingTop: newPaddingTop
-            });
-            state.paddingTop = newPaddingTop;
-            state.end = false;
+            let newPaddingTop = pageData.paddingTop + pageSize * pageData.clientHeight;
+            topDom.style.paddingTop = newPaddingTop + 'px';
+            pageData.paddingTop = newPaddingTop;
+            pageData.end = false;
             pageData.lastIndex = lastIndex;
-        } else if (totalPage > nextPage - 1 && !state.end) { // 处理数据最后的一部分
+        }
+        else if (totalPage > nextPage - 1 && !pageData.end) { // 处理数据最后的一部分
             let num = ((totalPage + '').split('.')[1] / 100) * pageSize;
             let appendData = data.slice(lastIndex * pageSize, num + lastIndex * pageSize);
-            lastData = state.curData.concat(appendData);
-            console.log(lastData);
-            let newPaddingTop = state.paddingTop + pageSize * pageData.clientHeight;
-            setState({
-                end: true,
-                paddingTop: newPaddingTop
-            });
-            state.newPaddingTop = newPaddingTop;
-            state.end = true;
+            lastData = pageData.curData.concat(appendData);
+            let newPaddingTop = pageData.paddingTop + pageSize * pageData.clientHeight;
+            topDom.style.paddingTop = newPaddingTop + 'px';
+            pageData.newPaddingTop = newPaddingTop;
+            pageData.end = true;
         }
 
         if (prevPage > 3 && lastData) {
-            console.log('in');
-            console.dir(prevPage * pageSize)
-            console.log(pageSize * 2)
-            console.log('before');
-            console.log(lastData);
-            debugger;
             lastData.splice(0, pageSize * 1);
-            console.log('after');
-            console.log(lastData);
             spliceNum = 3;
-        } else {
+        }
+        else {
             spliceNum = 0;
         }
 
-        state.curData = lastData || state.curData;
-        state.lastIndex = lastIndex;
-        state.spliceNum = spliceNum;
-        setState({
-            curData: state.curData,
-            lastIndex,
-            spliceNum
-        });
+        pageData.curData = lastData || pageData.curData;
+        // state.lastIndex = lastIndex;
+        pageData.spliceNum = spliceNum;
+        pageData.updataFn(pageData.curData);
+    };
+
+    let makeDom = function (dom, pageData) {
+        let topNode = document.createElement('div');
+        topNode.style.paddingBottom = '300px';
+        topNode.id = 'bottomDom';
+        dom.appendChild(topNode);
+        let bottomNode = document.createElement('div');
+        bottomNode.style.paddingTop = '0px';
+        bottomNode.id = 'topDom';
+        dom.insertBefore(bottomNode, dom.firstChild);
     };
 
     return {
-        init: function (options) {
+        init(options) {
             pageData = options.pageData;
             state = options.state;
-            setState = options.setState;
-            window.onscroll = function (e) {
-                var lastIndex = pageData.lastIndex;
-				var topIndex = pageData.topIndex;
-                var scrollTop = getScrollTop();
-                console.log(`this.getScrollTop() ${scrollTop}`);
-                if (scrollTop + getWindowHeight() > getScrollHeight() - 800) {
+            let scrollDom = pageData.rootDom || window;
+            pageData.curData = pageData.data.slice(0, pageData.pageSize);
+            pageData.paddingTop = 0;
+            pageData.end = false;
+            pageData.spliceNum = 0;
+            pageData.updataFn = options.updataFn;
+            makeDom(scrollDom);
+            let topDom = document.getElementById('topDom');
+            scrollDom.onscroll = function (e) {
+                let lastIndex = pageData.lastIndex;
+                let topIndex = pageData.topIndex;
+                let scrollTop = getScrollTop();     
+                console.log(e.srcElement.scrollTop);
+                // if (scrollTop + getWindowHeight() > getScrollHeight() - 800) {
+                if (e.srcElement.scrollTop - pageData.paddingTop > (pageData.paddingTop ? 1300 : 865)) {
+                    console.log('in');
                     lastIndex++;
-                    getEndData(lastIndex, state.data);
-                    console.log(`lastIndex is ${lastIndex}`);
-                } else if (getScrollTop() < state.paddingTop) {
+                    console.log(`lastIndex++ ${lastIndex}`);
+                    getEndData(lastIndex, pageData);
+                }
+                // else if (getScrollTop() < state.paddingTop) {
+                else if (e.srcElement.scrollTop < pageData.paddingTop) {
                     if (lastIndex > 4) {
-                        getTopData(lastIndex - 4, state.data);
-					} else {
-                        setState({
-                            paddingTop: 0
-                        });
-                        state.paddingTop = 0;
+                        getTopData(lastIndex - 4, pageData);
+                    }
+                    else {
+                        topDom.style.paddingTop = '0px';
+                        pageData.paddingTop = 0;
                     }
                 }
-                console.log(lastIndex);
             };
         }
     };
-
 }));
