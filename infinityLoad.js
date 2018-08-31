@@ -151,40 +151,43 @@
     };
 
     return {
+        pageData: {
+
+        },
         init(options) {
-            pageData = options.pageData;
+            this.pageData = options.pageData;
             state = options.state;
-            let scrollDom = pageData.rootDom || window;
-            pageData.curData = pageData.data.slice(0, pageData.pageSize);
-            pageData.paddingTop = 0;
-            pageData.end = false;
-            pageData.spliceNum = 0;
-            pageData.updataFn = options.updataFn;
+            let scrollDom = this.pageData.rootDom || window;
+            this.pageData.curData = this.pageData.data.slice(0, pageData.pageSize);
+            this.pageData.paddingTop = 0;
+            this.pageData.end = false;
+            this.pageData.spliceNum = 0;
+            this.pageData.updataFn = options.updataFn;
             makeDom(scrollDom);
             let topDom = document.getElementById('topDom');
             scrollDom.onscroll = function (e) {
-                let lastIndex = pageData.lastIndex;
-                let topIndex = pageData.topIndex;
+                let lastIndex = this.pageData.lastIndex;
+                let topIndex = this.pageData.topIndex;
                 let scrollTop = getScrollTop();     
                 console.log(e.srcElement.scrollTop);
                 // if (scrollTop + getWindowHeight() > getScrollHeight() - 800) {
-                if (e.srcElement.scrollTop - pageData.paddingTop > (pageData.paddingTop ? 1300 : 865)) {
+                if (e.srcElement.scrollTop - this.pageData.paddingTop > (this.pageData.paddingTop ? 1300 : 865)) {
                     console.log('in');
                     lastIndex++;
                     console.log(`lastIndex++ ${lastIndex}`);
-                    getEndData(lastIndex, pageData);
+                    getEndData(lastIndex, this.pageData);
                 }
                 // else if (getScrollTop() < state.paddingTop) {
-                else if (e.srcElement.scrollTop < pageData.paddingTop) {
+                else if (e.srcElement.scrollTop < this.pageData.paddingTop) {
                     if (lastIndex > 4) {
-                        getTopData(lastIndex - 4, pageData);
+                        getTopData(lastIndex - 4, this.pageData);
                     }
                     else {
                         topDom.style.paddingTop = '0px';
-                        pageData.paddingTop = 0;
+                        this.pageData.paddingTop = 0;
                     }
                 }
-            };
+            }.bind(this);
         }
     };
 }));
